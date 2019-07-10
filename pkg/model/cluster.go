@@ -18,7 +18,6 @@ package model
 import (
 	"time"
 
-	"github.com/knative/serving/pkg/autoscaler"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -40,7 +39,7 @@ type ClusterModel interface {
 	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time)
+	RecordToAutoscaler(autoscaler SkAutoscaler, atTime *time.Time)
 	BufferStock() RequestsBufferedStock
 }
 
@@ -79,21 +78,21 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(scaler autoscaler.UniScaler, atTime *time.Time) {
+func (cm *clusterModel) RecordToAutoscaler(autoscaler SkAutoscaler, atTime *time.Time) {
 	// first report for the buffer
-	scaler.Record(cm.env.Context(), autoscaler.Stat{
-		Time:                      atTime,
-		PodName:                   "Buffer",
-		AverageConcurrentRequests: float64(cm.requestsInBuffer.Count()),
-		RequestCount:              int32(cm.requestsInBuffer.Count()),
+	autoscaler.Stat(&podConcurrencyStat{
+		time:               *atTime,
+		podName:            "Buffer",
+		averageConcurrency: int32(cm.requestsInBuffer.Count()),
 	})
+	// TODO: report request count
 
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
 		r := (*e).(ReplicaEntity)
-		stat := r.Stat()
-
-		scaler.Record(cm.env.Context(), stat)
+		for _, stat := range r.Stats() {
+			autoscaler.Stat(stat)
+		}
 	}
 }
 
@@ -130,7 +129,7 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	cm := &clusterModel{
 		env:                 env,
 		config:              config,
-		replicasConfig:		 replicasConfig,
+		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
 		replicasLaunching:   simulator.NewThroughStock("ReplicasLaunching", simulator.EntityKind("Replica")),
 		replicasActive:      replicasActive,
