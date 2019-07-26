@@ -18,6 +18,7 @@ package model
 import (
 	"time"
 
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/informers"
@@ -39,7 +40,7 @@ type ClusterModel interface {
 	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(autoscaler SkAutoscaler, atTime *time.Time)
+	RecordToAutoscaler(autoscaler skplug.Autoscaler, atTime *time.Time)
 	BufferStock() RequestsBufferedStock
 }
 
@@ -78,21 +79,25 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(autoscaler SkAutoscaler, atTime *time.Time) {
+func (cm *clusterModel) RecordToAutoscaler(autoscaler skplug.Autoscaler, atTime *time.Time) {
 	// first report for the buffer
-	autoscaler.Stat(&podConcurrencyStat{
-		time:               *atTime,
-		podName:            "Buffer",
-		averageConcurrency: int32(cm.requestsInBuffer.Count()),
+	stats := make([]*skplug.Stat, 0)
+	stats = append(stats, &skplug.Stat{
+		Time:    atTime.UnixNano(),
+		PodName: "Buffer",
+		Metric:  "concurrency",
+		Value:   int32(cm.requestsInBuffer.Count()),
 	})
 	// TODO: report request count
 
 	// and then report for the replicas
 	for _, e := range cm.replicasActive.EntitiesInStock() {
 		r := (*e).(ReplicaEntity)
-		for _, stat := range r.Stats() {
-			autoscaler.Stat(stat)
-		}
+		stats = append(stats, r.Stats()...)
+	}
+	err := autoscaler.Stat(stats)
+	if err != nil {
+		panic(err)
 	}
 }
 

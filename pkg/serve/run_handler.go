@@ -98,7 +98,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
-	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
+	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf, autoscaler)
 	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
 
 	var traffic trafficpatterns.Pattern
