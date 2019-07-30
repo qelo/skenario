@@ -17,9 +17,11 @@ package model
 
 import (
 	"context"
-	"github.com/knative/serving/pkg/autoscaler"
 	"time"
 
+	"github.com/knative/serving/pkg/autoscaler"
+
+	"skenario/pkg/plugin"
 	"skenario/pkg/simulator"
 )
 
@@ -27,6 +29,10 @@ type FakeEnvironment struct {
 	Movements   []simulator.Movement
 	TheTime     time.Time
 	TheHaltTime time.Time
+}
+
+func (fe *FakeEnvironment) Plugin() *plugin.PluginPartition {
+	return nil
 }
 
 func (fe *FakeEnvironment) AddToSchedule(movement simulator.Movement) (added bool) {

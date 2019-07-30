@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"skenario/pkg/plugin"
 )
 
 const (
@@ -29,6 +31,7 @@ const (
 )
 
 type Environment interface {
+	Plugin() *plugin.PluginPartition
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -48,7 +51,8 @@ type IgnoredMovement struct {
 }
 
 type environment struct {
-	ctx context.Context
+	ctx    context.Context
+	plugin *plugin.PluginPartition
 
 	current time.Time
 	startAt time.Time
@@ -61,6 +65,10 @@ type environment struct {
 	futureMovements MovementPriorityQueue
 	completed       []CompletedMovement
 	ignored         []IgnoredMovement
+}
+
+func (env *environment) Plugin() *plugin.PluginPartition {
+	return env.plugin
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -141,6 +149,7 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 
 	env := &environment{
 		ctx:     ctx,
+		plugin:  plugin.NewPluginPartition(),
 		startAt: startAt,
 		haltAt:  startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
 		current: startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement

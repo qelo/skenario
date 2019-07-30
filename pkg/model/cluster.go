@@ -18,7 +18,6 @@ package model
 import (
 	"time"
 
-	"github.com/josephburnett/sk-plugin/pkg/skplug"
 	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +40,7 @@ type ClusterModel interface {
 	Desired() ReplicasDesiredStock
 	CurrentLaunching() uint64
 	CurrentActive() uint64
-	RecordToAutoscaler(autoscaler skplug.Plugin, atTime *time.Time)
+	RecordToAutoscaler(atTime *time.Time)
 	BufferStock() RequestsBufferedStock
 }
 
@@ -51,7 +50,6 @@ type EndpointInformerSource interface {
 
 type clusterModel struct {
 	env                 simulator.Environment
-	partition           string
 	config              ClusterConfig
 	replicasConfig      ReplicasConfig
 	replicasDesired     ReplicasDesiredStock
@@ -81,7 +79,7 @@ func (cm *clusterModel) CurrentActive() uint64 {
 	return cm.replicasActive.Count()
 }
 
-func (cm *clusterModel) RecordToAutoscaler(plugin skplug.Plugin, atTime *time.Time) {
+func (cm *clusterModel) RecordToAutoscaler(atTime *time.Time) {
 	// first report for the buffer
 	stats := make([]*proto.Stat, 0)
 	stats = append(stats, &proto.Stat{
@@ -97,7 +95,7 @@ func (cm *clusterModel) RecordToAutoscaler(plugin skplug.Plugin, atTime *time.Ti
 		r := (*e).(ReplicaEntity)
 		stats = append(stats, r.Stats()...)
 	}
-	err := plugin.Stat(cm.partition, stats)
+	err := cm.env.Plugin().Stat(stats)
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +109,7 @@ func (cm *clusterModel) BufferStock() RequestsBufferedStock {
 	return cm.requestsInBuffer
 }
 
-func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig, partition string) ClusterModel {
+func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig ReplicasConfig) ClusterModel {
 	fakeClient := k8sfakes.NewSimpleClientset()
 	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
 	endpointsInformer := informerFactory.Core().V1().Endpoints()
@@ -135,7 +133,6 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 
 	cm := &clusterModel{
 		env:                 env,
-		partition:           partition,
 		config:              config,
 		replicasConfig:      replicasConfig,
 		replicaSource:       NewReplicaSource(env, fakeClient, endpointsInformer, replicasConfig.MaxRPS),
