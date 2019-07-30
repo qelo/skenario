@@ -19,6 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
@@ -78,6 +80,8 @@ type SkenarioRunRequest struct {
 	SinusoidalConfig trafficpatterns.SinusoidalConfig `json:"sinusoidal_config,omitempty"`
 }
 
+var environmentSequence int32 = 0
+
 func RunHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -88,6 +92,7 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	env := simulator.NewEnvironment(r.Context(), startAt, runReq.RunFor)
+	partition := strconv.Itoa(int(atomic.AddInt32(&environmentSequence, 1)))
 
 	clusterConf := buildClusterConfig(runReq)
 	kpaConf := buildKpaConfig(runReq)
@@ -97,8 +102,8 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		MaxRPS:         runReq.ReplicaMaxRPS,
 	}
 
-	cluster := model.NewCluster(env, clusterConf, replicasConfig)
-	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf, autoscaler)
+	cluster := model.NewCluster(env, clusterConf, replicasConfig, partition)
+	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf, pluginServer, partition)
 	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
 
 	var traffic trafficpatterns.Pattern
