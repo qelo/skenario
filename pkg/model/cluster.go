@@ -152,12 +152,5 @@ func NewCluster(env simulator.Environment, config ClusterConfig, replicasConfig 
 	}
 
 	cm.replicasDesired = NewReplicasDesiredStock(env, desiredConf, cm.replicaSource, cm.replicasLaunching, cm.replicasActive, cm.replicasTerminating)
-
-	// TODO: create initial replicas config.
-	// Create the first pod since HPA can't scale from zero.
-	err := cm.replicasActive.Add(cm.replicaSource.Remove())
-	if err != nil {
-		panic(err)
-	}
 	return cm
 }
