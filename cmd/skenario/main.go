@@ -20,11 +20,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/bvinc/go-sqlite-lite/sqlite3"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/bvinc/go-sqlite-lite/sqlite3"
 
 	"skenario/pkg/data"
 	"skenario/pkg/model/trafficpatterns"
@@ -71,7 +72,7 @@ func main() {
 	r := NewRunner()
 
 	cluster := model.NewCluster(r.Env(), r.ClusterConfig(), r.ReplicasConfig())
-	model.NewKnativeAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
+	model.NewAutoscaler(r.Env(), startAt, cluster, r.AutoscalerConfig())
 	trafficSource := model.NewTrafficSource(r.Env(), cluster.BufferStock())
 
 	var traffic trafficpatterns.Pattern

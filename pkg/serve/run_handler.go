@@ -18,10 +18,13 @@ package serve
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/bvinc/go-sqlite-lite/sqlite3"
+	"github.com/josephburnett/sk-plugin/pkg/skplug"
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 
 	"skenario/pkg/data"
 	"skenario/pkg/model"
@@ -100,7 +103,8 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cluster := model.NewCluster(env, clusterConf, replicasConfig)
-	model.NewKnativeAutoscaler(env, startAt, cluster, kpaConf)
+
+	model.NewAutoscaler(env, startAt, cluster, kpaConf)
 	trafficSource := model.NewTrafficSource(env, cluster.BufferStock())
 
 	var traffic trafficpatterns.Pattern
@@ -154,6 +158,12 @@ func RunHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	err = env.Plugin().Event(startAt.UnixNano(), proto.EventType_DELETE, &skplug.Autoscaler{})
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Deleted autoscaler.")
 }
 
 func tallyLines(dbFileName string, scenarioRunId int64) []TallyLine {
