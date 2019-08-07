@@ -17,8 +17,7 @@ package model
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
+	"log"
 	"time"
 
 	"skenario/pkg/simulator"
@@ -33,9 +32,10 @@ type requestsProcessingStock struct {
 	env                   simulator.Environment
 	delegate              simulator.ThroughStock
 	replicaNumber         int
+	requestsExhausted     simulator.ThroughStock
 	requestsComplete      simulator.SinkStock
 	numRequestsSinceLast  int32
-	replicaMaxRPSCapacity int64
+	replicaMaxRPSCapacity int64 // unused
 }
 
 func (rps *requestsProcessingStock) Name() simulator.StockName {
@@ -60,18 +60,50 @@ func (rps *requestsProcessingStock) Remove() simulator.Entity {
 }
 
 func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
-	rps.numRequestsSinceLast++
+	// TODO: this isn't correct anymore
+	//rps.numRequestsSinceLast++
 
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	totalTime := calculateTime(rps.delegate.Count(), rps.replicaMaxRPSCapacity, time.Second, rng)
+	log.Printf("processing: %v  exhausted: %v  completed: %v\n",
+		len(rps.EntitiesInStock()),
+		len(rps.requestsExhausted.EntitiesInStock()),
+		len(rps.requestsComplete.EntitiesInStock()))
 
+	req, ok := entity.(*requestEntity)
+	if !ok {
+		return fmt.Errorf("requests processing stock only supports request entities. got %T", entity)
+	}
+	cpuSecondsRemaining := req.cpuSecondsRequired - req.cpuSecondsConsumed
+
+	// Request requires processing
+	if cpuSecondsRemaining > 0 {
+		interruptSeconds := cpuSecondsRemaining
+		if interruptSeconds > 200*time.Millisecond {
+			interruptSeconds = 200 * time.Millisecond
+		}
+		req.cpuSecondsConsumed += interruptSeconds
+		rps.env.AddToSchedule(simulator.NewMovement(
+			"interrupt_request",
+			rps.env.CurrentMovementTime().Add(interruptSeconds),
+			rps,
+			rps,
+		))
+		return rps.delegate.Add(entity)
+	}
+
+	// Request is exhausted
+	rps.env.AddToSchedule(simulator.NewMovement(
+		"interrupt_request",
+		rps.env.CurrentMovementTime().Add(time.Nanosecond),
+		rps,
+		rps,
+	))
 	rps.env.AddToSchedule(simulator.NewMovement(
 		"complete_request",
-		rps.env.CurrentMovementTime().Add(totalTime),
-		rps,
+		rps.env.CurrentMovementTime().Add(2*time.Nanosecond),
+		rps.requestsExhausted,
 		rps.requestsComplete,
 	))
-	return rps.delegate.Add(entity)
+	return rps.requestsExhausted.Add(entity)
 }
 
 func (rps *requestsProcessingStock) RequestCount() int32 {
@@ -85,37 +117,8 @@ func NewRequestsProcessingStock(env simulator.Environment, replicaNumber int, re
 		env:                   env,
 		delegate:              simulator.NewThroughStock("RequestsProcessing", "Request"),
 		replicaNumber:         replicaNumber,
+		requestsExhausted:     simulator.NewThroughStock("RequestsProcessing", "Request"),
 		requestsComplete:      requestSink,
 		replicaMaxRPSCapacity: replicaMaxRPSCapacity,
 	}
-}
-
-func saturateClamp(fractionUtilised float64) float64 {
-	if fractionUtilised > 0.96 {
-		return 0.96
-	} else if fractionUtilised > 0.0 {
-		return fractionUtilised
-	}
-
-	return 0.01
-}
-
-// returns Sakasegawa's approximation for expected queueing time for an M/M/m queue
-func sakasegawaApproximation(fractionUtilised, maxRPS float64, baseServiceTime time.Duration) time.Duration {
-	powerTerm := math.Sqrt(2*(maxRPS+1)) - 1
-	utilizationTerm := math.Pow(fractionUtilised, powerTerm) / (maxRPS * (1 - fractionUtilised))
-
-	expected := time.Duration(utilizationTerm * float64(baseServiceTime))
-
-	return expected
-}
-
-func calculateTime(currentRequests uint64, maxRPS int64, baseServiceTime time.Duration, rng *rand.Rand) time.Duration {
-	fractionUtilised := saturateClamp(float64(currentRequests) / float64(maxRPS))
-	delayTime := 1 + sakasegawaApproximation(fractionUtilised, float64(maxRPS), baseServiceTime)
-
-	delayRand := rng.Int63n(int64(delayTime))
-	totalTime := baseServiceTime + time.Duration(delayRand)
-
-	return totalTime
 }

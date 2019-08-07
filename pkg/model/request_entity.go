@@ -39,6 +39,9 @@ type requestEntity struct {
 	bufferStock RequestsBufferedStock
 	nextBackoff time.Duration
 	attempts    int
+
+	cpuSecondsRequired time.Duration
+	cpuSecondsConsumed time.Duration
 }
 
 var reqNumber int
@@ -71,5 +74,7 @@ func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) R
 		number:      reqNumber,
 		bufferStock: buffer,
 		nextBackoff: 100 * time.Millisecond,
+
+		cpuSecondsRequired: 500 * time.Millisecond,
 	}
 }
