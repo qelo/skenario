@@ -67,6 +67,10 @@ func (re *requestEntity) NextBackoff() (backoff time.Duration, outOfAttempts boo
 	return thisBackoff, outOfAttempts
 }
 
+func (re *requestEntity) cpuSecondsRemaining() time.Duration {
+	return re.cpuSecondsRequired - re.cpuSecondsConsumed
+}
+
 func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) RequestEntity {
 	reqNumber++
 	return &requestEntity{
