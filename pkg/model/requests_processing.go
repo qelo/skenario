@@ -62,11 +62,8 @@ func (rps *requestsProcessingStock) EntitiesInStock() []*simulator.Entity {
 }
 
 func (rps *requestsProcessingStock) Remove() simulator.Entity {
-	if rps.processesActive.Count() > 0 {
-		return rps.Remove()
-	}
-	if rps.processesOnCpu.Count() > 0 {
-		return rps.Remove()
+	if rps.processesTerminated.Count() > 0 {
+		return rps.processesTerminated.Remove()
 	}
 	return nil
 }
@@ -78,6 +75,10 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 	req, ok := entity.(*requestEntity)
 	if !ok {
 		return fmt.Errorf("requests processing stock only supports request entities. got %T", entity)
+	}
+	if req.startTime == nil {
+		now := rps.env.CurrentMovementTime()
+		req.startTime = &now
 	}
 
 	// Enqueue or complete the request.
@@ -94,9 +95,12 @@ func (rps *requestsProcessingStock) Add(entity simulator.Entity) error {
 		rps.env.AddToSchedule(simulator.NewMovement(
 			"complete_request",
 			rps.env.CurrentMovementTime().Add(time.Nanosecond),
-			rps.processesTerminated,
+			rps,
 			rps.requestsComplete,
 		))
+		now := rps.env.CurrentMovementTime()
+		latency := now.Sub(*req.startTime)
+		// log.Printf("latecy: %v\n", latency)
 	}
 
 	// Fill the CPU and schedule an interrupt.
