@@ -81,6 +81,6 @@ func NewRequestEntity(env simulator.Environment, buffer RequestsBufferedStock) R
 		bufferStock: buffer,
 		nextBackoff: 100 * time.Millisecond,
 
-		cpuSecondsRequired: 500 * time.Millisecond,
+		cpuSecondsRequired: 100 * time.Millisecond,
 	}
 }
