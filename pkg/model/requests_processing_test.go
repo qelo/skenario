@@ -128,7 +128,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 			})
 			it("allocated cpu resource for a request is freed", func() {
 				rawSubject.Remove()
-				assert.Equal(t, *rawSubject.occupiedCPUCapacityMillisPerSecond, 0.0)
+				assert.Less(t, math.Abs(*rawSubject.occupiedCPUCapacityMillisPerSecond-0.0), 0.001)
 			})
 		})
 	})
