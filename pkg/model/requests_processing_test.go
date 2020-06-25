@@ -86,7 +86,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 			})
 
 			it("there is 1 entity in processingStock", func() {
-				assert.Equal(t, subject.Count(), uint64(1))
+				assert.Equal(t, uint64(1), subject.Count())
 			})
 		})
 		describe("request fails as request total time exceeds request timeout", func() {
@@ -94,10 +94,6 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
 				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 20000, IOTimeMillis: 200, Timeout: 3 * time.Second})
 				subject.Add(request)
-			})
-
-			it("increments the number of requests since last Stat()", func() {
-				assert.Equal(t, int32(1), rawSubject.numRequestsSinceLast)
 			})
 
 			it("cpu resource is allocated", func() {
@@ -123,8 +119,8 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 				subject.Add(request)
 			})
 
-			it("cpu resource is allocated", func() {
-				assert.NotEqual(t, rawSubject.occupiedCPUCapacityMillisPerSecond, 0)
+			it("90.909 cpu resource is allocated", func() {
+				assert.Less(t, math.Abs(*rawSubject.occupiedCPUCapacityMillisPerSecond-90.909), 0.001)
 			})
 
 			it("schedules a movement from RequestsProcessing to RequestsComplete", func() {
