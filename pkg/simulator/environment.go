@@ -19,6 +19,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"skenario/pkg/plugin"
 )
 
 const (
@@ -28,6 +30,7 @@ const (
 )
 
 type Environment interface {
+	Plugin() *plugin.PluginPartition
 	AddToSchedule(movement Movement) (added bool)
 	Run() (completed []CompletedMovement, ignored []IgnoredMovement, err error)
 	CurrentMovementTime() time.Time
@@ -48,10 +51,19 @@ type IgnoredMovement struct {
 	Moved    Entity
 }
 
+<<<<<<< HEAD
 type CPUUtilization struct {
 	CPUUtilization float64
 	CalculatedAt   time.Time
 }
+||||||| db4b6e0
+type environment struct {
+	ctx context.Context
+=======
+type environment struct {
+	ctx    context.Context
+	plugin *plugin.PluginPartition
+>>>>>>> joe/plugin
 
 type environment struct {
 	ctx     context.Context
@@ -67,6 +79,10 @@ type environment struct {
 	completed       []CompletedMovement
 	ignored         []IgnoredMovement
 	cpuUtilizations []*CPUUtilization
+}
+
+func (env *environment) Plugin() *plugin.PluginPartition {
+	return env.plugin
 }
 
 func (env *environment) AddToSchedule(movement Movement) (added bool) {
@@ -133,6 +149,7 @@ func (env *environment) Context() context.Context {
 	return env.ctx
 }
 
+<<<<<<< HEAD
 func (env *environment) CPUUtilizations() []*CPUUtilization {
 	return env.cpuUtilizations
 }
@@ -141,6 +158,11 @@ func (env *environment) AppendCPUUtilization(cpuUtilization *CPUUtilization) {
 	env.cpuUtilizations = append(env.cpuUtilizations, cpuUtilization)
 }
 
+||||||| db4b6e0
+=======
+var environmentSequence int32 = 0
+
+>>>>>>> joe/plugin
 func NewEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration) Environment {
 	pqueue := NewMovementPriorityQueue()
 	return newEnvironment(ctx, startAt, runFor, pqueue)
@@ -153,6 +175,7 @@ func newEnvironment(ctx context.Context, startAt time.Time, runFor time.Duration
 
 	env := &environment{
 		ctx:     ctx,
+		plugin:  plugin.NewPluginPartition(),
 		startAt: startAt,
 		haltAt:  startAt.Add(runFor).Add(1 * time.Nanosecond), // make temporary space for the Halt Scenario movement
 		current: startAt.Add(-1 * time.Nanosecond),            // make temporary space for the Start Scenario movement
