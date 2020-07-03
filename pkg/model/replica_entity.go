@@ -117,13 +117,12 @@ func (re *replicaEntity) Stats() []*proto.Stat {
 		Type:    proto.MetricType_CONCURRENT_REQUESTS_MILLIS,
 		Value:   int32(re.requestsProcessing.Count() * 1000),
 	})
-
+	cpuUsage := int32(re.occupiedCPUCapacityMillisPerSecond)
 	stats = append(stats, &proto.Stat{
 		Time:    atTime.UnixNano(),
 		PodName: string(re.Name()),
 		Type:    proto.MetricType_CPU_MILLIS,
-		// TODO: calculate cpu usage based on request time in cpu stock, put instead of 0
-		Value: int32(0),
+		Value:   cpuUsage,
 	})
 
 	re.numRequestsSinceStat = 0
