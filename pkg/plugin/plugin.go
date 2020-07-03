@@ -15,7 +15,7 @@ import (
 var pluginServer skplug.Plugin
 var client *plugin.Client
 
-func init() {
+func Init() {
 	// We don't want to see the plugin logs.
 	//log.SetOutput(ioutil.Discard)
 
