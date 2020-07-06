@@ -38,7 +38,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 		totalCPUCapacityMillisPerSecond := 100.0
 		occupiedCPUCapacityMillisPerSecond := 0.0
 		failedSink := simulator.NewSinkStock("RequestsFailed", "Request")
@@ -136,9 +136,9 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	describe("RequestCount()", func() {
 		it.Before(func() {
 
-			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil),
 				RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
-			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil),
 				RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
 		})
 
