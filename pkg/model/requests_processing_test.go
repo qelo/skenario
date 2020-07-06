@@ -37,7 +37,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	var envFake *FakeEnvironment
 
 	it.Before(func() {
-		envFake = new(FakeEnvironment)
+		envFake = NewFakeEnvironment()
 		totalCPUCapacityMillisPerSecond := 100.0
 		occupiedCPUCapacityMillisPerSecond := 0.0
 		failedSink := simulator.NewSinkStock("RequestsFailed", "Request")
@@ -73,13 +73,9 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 		var request simulator.Entity
 
 		it.Before(func() {
-			bufferStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+			bufferStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
 			request = NewRequestEntity(envFake, bufferStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
 			subject.Add(request)
-		})
-
-		it("increments the number of requests since last Stat()", func() {
-			assert.Equal(t, int32(1), rawSubject.numRequestsSinceLast)
 		})
 
 		describe("scheduling processing", func() {
@@ -92,9 +88,9 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 	describe("RequestCount()", func() {
 		it.Before(func() {
 
-			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil),
 				RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
-			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil),
+			subject.Add(NewRequestEntity(envFake, NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil),
 				RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 1 * time.Second}))
 		})
 

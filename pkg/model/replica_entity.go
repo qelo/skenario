@@ -32,6 +32,7 @@ type Replica interface {
 	Deactivate()
 	RequestsProcessing() RequestsProcessingStock
 	Stats() []*proto.Stat
+	GetCPUCapacity() float64
 }
 
 type ReplicaEntity interface {
@@ -137,6 +138,10 @@ func (re *replicaEntity) Name() simulator.EntityName {
 
 func (re *replicaEntity) Kind() simulator.EntityKind {
 	return "Replica"
+}
+
+func (re *replicaEntity) GetCPUCapacity() float64 {
+	return re.totalCPUCapacityMillisPerSecond
 }
 
 func NewReplicaEntity(env simulator.Environment, client kubernetes.Interface, endpointsInformer informers.EndpointsInformer, address string, failedSink *simulator.SinkStock) ReplicaEntity {
