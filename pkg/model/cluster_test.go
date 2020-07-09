@@ -115,8 +115,6 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 		var theTime = time.Now()
 		var replicaFake *FakeReplica
 		envFake = NewFakeEnvironment()
-		recordOnce := 1
-		recordThrice := 4
 
 		it.Before(func() {
 			rawSubject = subject.(*clusterModel)
@@ -143,8 +141,15 @@ func testCluster(t *testing.T, describe spec.G, it spec.S) {
 
 		// TODO immediately record arrivals at routingStock
 
-		it("records once for the routingStock and twice each replica in ReplicasActive", func() {
-			assert.Len(t, envFake.ThePlugin.(*FakePluginPartition).stats, recordOnce+recordThrice)
+		it("records once for the routingStock and twice for each replica in ReplicasActive, we have 2 replicas", func() {
+			stats := envFake.ThePlugin.(*FakePluginPartition).stats
+			assert.Len(t, envFake.ThePlugin.(*FakePluginPartition).stats, 5)
+			assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+			assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+			assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)
+			assert.Equal(t, stats[3].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+			assert.Equal(t, stats[4].Type, proto.MetricType_CPU_MILLIS)
+
 		})
 
 		describe("the record for the routingStock", func() {

@@ -16,6 +16,7 @@
 package model
 
 import (
+	"github.com/josephburnett/sk-plugin/pkg/skplug/proto"
 	"math"
 	"testing"
 	"time"
@@ -52,12 +53,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 		it("sets the entity", func() {
 			assert.Equal(t, simulator.EntityName("Autoscaler"), rawSubject.autoscalerEntity.Name())
 			assert.Equal(t, simulator.EntityKind("HPAAutoscaler"), rawSubject.autoscalerEntity.Kind())
-		})
-	})
-
-	describe("Name()", func() {
-		it("is called 'HPAAutoscaler Stock'", func() {
-			assert.Equal(t, subject.Name(), simulator.StockName("Autoscaler Ticktock"))
 		})
 	})
 
@@ -122,8 +117,6 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 
 			describe("updating statistics", func() {
 				var rawCluster *clusterModel
-				onceForRoutingStock := 1 //MetricType_CONCURRENT_REQUESTS_MILLIS
-				twiceForReplica := 2     //MetricType_CONCURRENT_REQUESTS_MILLIS, MetricType_CPU_MILLIS
 
 				it.Before(func() {
 					rawCluster = cluster.(*clusterModel)
@@ -138,7 +131,11 @@ func testAutoscalerTicktock(t *testing.T, describe spec.G, it spec.S) {
 				})
 
 				it("delegates statistics updating to ClusterModel", func() {
-					assert.Len(t, envFake.ThePlugin.(*FakePluginPartition).stats, onceForRoutingStock+twiceForReplica)
+					stats := envFake.ThePlugin.(*FakePluginPartition).stats
+					assert.Len(t, stats, 3)
+					assert.Equal(t, stats[0].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+					assert.Equal(t, stats[1].Type, proto.MetricType_CONCURRENT_REQUESTS_MILLIS)
+					assert.Equal(t, stats[2].Type, proto.MetricType_CPU_MILLIS)
 				})
 			})
 

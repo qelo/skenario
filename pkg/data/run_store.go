@@ -30,7 +30,7 @@ type RunStore interface {
 		completed []simulator.CompletedMovement,
 		ignored []simulator.IgnoredMovement,
 		clusterConf model.ClusterConfig,
-		kpaConf model.AutoscalerConfig,
+		asConf model.AutoscalerConfig,
 		origin string,
 		trafficPattern string,
 		ranFor time.Duration,
