@@ -75,7 +75,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 		describe("there is no free cpu resource", func() {
 			it.Before(func() {
 				*rawSubject.occupiedCPUCapacityMillisPerSecond = *rawSubject.totalCPUCapacityMillisPerSecond
-				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
 				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
 				subject.Add(request)
 			})
@@ -91,7 +91,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 		})
 		describe("request fails as request total time exceeds request timeout", func() {
 			it.Before(func() {
-				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
 				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 20000, IOTimeMillis: 200, Timeout: 3 * time.Second})
 				subject.Add(request)
 			})
@@ -114,7 +114,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 			it.Before(func() {
 				//there is free cpu resource
 				*rawSubject.occupiedCPUCapacityMillisPerSecond = 0.0
-				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+				routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
 				request = NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second})
 				subject.Add(request)
 			})
@@ -220,7 +220,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 				var isRequestSuccessful bool
 				var totalTime time.Duration
 				it.Before(func() {
-					routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+					routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
 					request = *NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second}).(*requestEntity)
 					rawSubject.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
 				})
@@ -245,7 +245,7 @@ func testRequestsProcessing(t *testing.T, describe spec.G, it spec.S) {
 				var isRequestSuccessful bool
 				var totalTime time.Duration
 				it.Before(func() {
-					routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(), nil)
+					routingStock := NewRequestsRoutingStock(envFake, NewReplicasActiveStock(envFake), nil)
 					request = *NewRequestEntity(envFake, routingStock, RequestConfig{CPUTimeMillis: 200, IOTimeMillis: 200, Timeout: 3 * time.Second}).(*requestEntity)
 					rawSubject.calculateCPUUtilizationForRequest(request, &totalTime, &isRequestSuccessful)
 				})
