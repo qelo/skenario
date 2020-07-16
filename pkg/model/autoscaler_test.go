@@ -22,27 +22,11 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/informers/core/v1"
-	k8sfakes "k8s.io/client-go/kubernetes/fake"
-
 	"skenario/pkg/simulator"
 )
 
 func TestAutoscaler(t *testing.T) {
 	spec.Run(t, "HPA Autoscaler model", testAutoscaler, spec.Report(report.Terminal{}))
-}
-
-type fakeEndpointsInformerSource struct {
-	epInformerCalled bool
-}
-
-func (feis *fakeEndpointsInformerSource) EPInformer() v1.EndpointsInformer {
-	feis.epInformerCalled = true
-
-	fakeClient := k8sfakes.NewSimpleClientset()
-	informerFactory := informers.NewSharedInformerFactory(fakeClient, 0)
-	return informerFactory.Core().V1().Endpoints()
 }
 
 func testAutoscaler(t *testing.T, describe spec.G, it spec.S) {
