@@ -223,7 +223,7 @@ of each simulated Entity became a large, hairy switch statement.
 
 The second problem was that FSMs and events could not easily represent that Replicas
 are created and destroyed during the life of the simulation. The assignment of Requests
-to Replicas is critical to provoking a realistic response from the Horizontal Pod Autoscaler.
+to Replicas is critical to provoking a realistic response from the Autoscaler.
 It is not enough to have an FSM representing "processing" as a state, it has to
 represent "processing on replica-4" as a state. But the existence and reachability
 of this state is contingent on the existence or non-existence of Replicas. This
